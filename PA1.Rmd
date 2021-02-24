@@ -1,0 +1,72 @@
+---
+title: "PA1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Step Analysis
+
+## Loading Data
+```{r}
+data = read.csv(unz('activity.zip','activity.csv'))
+```
+
+## Mean total number of steps per day
+The total number of steps taken per day:
+```{r}
+sum(data$steps,na.rm = T)
+```
+
+Histogram of total number of steps taken per day:
+```{r}
+day.totals = sapply(lapply(split(data,data$date),'[[',1),sum)
+hist(day.totals,breaks=10)
+```
+
+As can be seen from the plot the total number of steps taken per day is approximately
+normally distributed. 
+
+The mean number of steps taken per day:
+```{r}
+mean(day.totals,na.rm=T)
+```
+The median number of steps taken per day:
+```{r}
+median(day.totals,na.rm=T)
+```
+This is close to the mean and so could support the idea that day.totals is normally
+distributed.
+
+## What is the average daily activity pattern?
+Time series plot:
+
+```{r}
+interval.totals = lapply(split(data,data$interval),'[[',1) # list steps for each interval
+names(interval.totals) = time(names(interval.totals)) - 1
+plot(names(interval.totals),sapply(interval.totals,mean,na.rm=T),type='l')
+```
+
+2) Which 5-minute interval, on average across all the days in the dataset, 
+contains the maximum number of steps?
+
+```{r}
+which(sapply(interval.totals,mean,na.rm=T) ==max(sapply(interval.totals,mean,na.rm=T)))
+```
+
+This tells us that the interval 835 or 08:35 in the morning is the one which 
+on average the most number of steps are taken.
+
+
+
+
+
+
+
+
+
+
+
+
