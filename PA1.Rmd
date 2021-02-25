@@ -15,21 +15,16 @@ data = read.csv(unz('activity.zip','activity.csv'))
 ```
 
 ## Mean total number of steps per day
-The total number of steps taken per day:
-```{r}
-sum(data$steps,na.rm = T)
-```
-
-Histogram of total number of steps taken per day:
+#### 1) Histogram of total number of steps taken per day:
 ```{r}
 day.totals = sapply(lapply(split(data,data$date),'[[',1),sum)
-hist(day.totals,breaks=10)
+hist(day.totals,breaks=20)
 ```
 
 As can be seen from the plot the total number of steps taken per day is approximately
 normally distributed. 
 
-The mean number of steps taken per day:
+#### 2) The mean number of steps taken per day:
 ```{r}
 mean(day.totals,na.rm=T)
 ```
@@ -41,32 +36,82 @@ This is close to the mean and so could support the idea that day.totals is norma
 distributed.
 
 ## What is the average daily activity pattern?
-Time series plot:
+#### 1) Time series plot:
 
 ```{r}
-interval.totals = lapply(split(data,data$interval),'[[',1) # list steps for each interval
-names(interval.totals) = time(names(interval.totals)) - 1
-plot(names(interval.totals),sapply(interval.totals,mean,na.rm=T),type='l')
+inter.tots = lapply(split(data,data$interval),'[[',1) # list of step counts for each interval
+names(inter.tots) = time(names(inter.tots)) - 1 # reformat interval names to be sequential
+plot(names(inter.tots),sapply(inter.tots,mean,na.rm=T),type='l') # plot mean of each interval as time series
 ```
 
-2) Which 5-minute interval, on average across all the days in the dataset, 
+#### 2) Which 5-minute interval, on average across all the days in the dataset, 
 contains the maximum number of steps?
 
 ```{r}
-which(sapply(interval.totals,mean,na.rm=T) ==max(sapply(interval.totals,mean,na.rm=T)))
+which(sapply(inter.tots,mean,na.rm=T) == max(sapply(inter.tots,mean,na.rm=T)))
 ```
 
-This tells us that the interval 835 or 08:35 in the morning is the one which 
-on average the most number of steps are taken.
+This tells us that interval 103 or (103*5)/60 = 8.533 hours after twelve = 8:35 
+in the morning is the interval with the highest average number of steps. 
+
+## Imputing Missing Values
+#### 1) Total missing values?
+```{r}
+sum(is.na(data$steps))
+```
+#### 3)/4) Create a new dataset that is equal to the original dataset but with the missing data filled in. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
 
+First, create data2, identical to data. Then, replace NA step values for the mean 
+of the corresponding interval.
+
+```{r}
+inter.tots = lapply(split(data,data$interval),'[[',1) # list of step counts for each interval
+inter.means = sapply(inter.tots,mean,na.rm=T)
+data2 = data
+data2$steps = sapply(seq_along(data$steps),function(x) {
+  if (is.na(data[x,1])) {as.numeric(inter.means[as.character(data[x,3])])} else {as.numeric(data[x,1])}
+  })
+
+```
+
+Now, we calculate the total steps for each day and plot a histogram:
+```{r}
+day2.totals = sapply(lapply(split(data2,data2$date),'[[',1),sum)
+hist(day2.totals,breaks=20)
+```
+
+We can see the distribution has been centered more strongly to the mean, confirmed
+by comparing the standard deviations of our original data and imputed data:
+
+```{r}
+sd(day.totals,na.rm = T)
+sd(day2.totals)
+```
+This is mostly due to a number of days that are completely missing, and so when 
+each interval is imputed with the mean of that interval, the total steps for that
+day will be equal to the mean. 
 
 
+Looking at the mean and medians of the data sets:
+
+```{r}
+medians = data.frame(data=median(day.totals,na.rm = T),data2=median(day2.totals,na.rm=T))
+means = data.frame(data=mean(day.totals,na.rm = T),data2=mean(day2.totals,na.rm=T))
+means
+medians
+```
 
 
+#### Are there differences in activity patterns between weekdays and weekends?
+```{r}
+days = weekdays(as.POSIXct(data2$date))
+data2$weekend = 1*(days %in% c('Saturday','Sunday'))
+weekend = lapply(split(data2[which(data2$weekend==1),],data2[which(data2$weekend==1),]$interval),'[[',1)
+weekday = lapply(split(data2[which(data2$weekend==0),],data2[which(data2$weekend==0),]$interval),'[[',1)
 
-
-
-
+plot(names(weekend),sapply(weekend,mean),type='l')
+plot(names(weekday),sapply(weekday,mean),type='l')
+```
 
 
